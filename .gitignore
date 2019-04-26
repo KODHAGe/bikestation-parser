@@ -5,3 +5,5 @@ stations/
 .Rproj.user/
 .Rproj.user
 .DS_Store
+.httr-oauth
+.httr-oauth-SUSPENDED

@@ -6,6 +6,11 @@ library(dplyr)
 library(tidyr)
 library(lubridate)
 library(keras)
+library(fastDummies)
+
+library(googleCloudStorageR)
+Sys.getenv("GCS_AUTH_FILE")
+gcs_global_bucket(Sys.getenv("GCS_GLOBAL_BUCKET"))
 
 #* Run learning
 #* @get /run
@@ -26,7 +31,7 @@ run <- function () {
               lon
               state
               }
-}')
+  }')
 
   json <- cli$exec(query$queries$allstations)
   json_data <- jsonlite::fromJSON(json)
@@ -48,9 +53,10 @@ run <- function () {
   x <- as_tibble(full)
   x <- x %>% select(stationId, stationSize, state, hour, minute, weekday, month)
   x <- fastDummies::dummy_cols(x, select_columns = c("stationId"), remove_first_dummy = TRUE)
+  column_names <<- colnames(x)
   x$stationId <- NULL
   
-  y %>% as_tibble(full)
+  y <- as_tibble(full)
   y <- y %>% select(bikesAvailable)
   
   x_train <- data.matrix(x)
@@ -69,6 +75,7 @@ run <- function () {
   )
   
   # Load model if it exists, else create a new one
+  gcs_get_object("checkpoints/model.hdf5", saveToDisk = "checkpoints/model.hdf5", overwrite = TRUE)
   
   if(file.exists("checkpoints/model.hdf5")) {
     model <- load_model_hdf5("checkpoints/model.hdf5")
@@ -101,8 +108,28 @@ run <- function () {
   # Evaluate & predict
   model %>% evaluate(x_train, y_train)
   
-  test_data <- x[1,]
-  test_data <- data.matrix(test_data)
+  test_data <<- x[1,]
+  test_data <<- data.matrix(test_data)
   test_predictions <- model %>% predict(test_data) 
   print(test_predictions)
+  
+  gcs_upload("checkpoints/model.hdf5")
+  list(status = "SUCCESS", code = "200",output = list(run = TRUE))
+}
+
+#* Run prediction
+#* @get /predict
+predict <- function() {
+  td <- as.data.frame(test_data)
+  
+  # Itämerentori station
+  td$stationId_030 = 1
+  td$minute = td$minute + 30
+  if(td$minute > 60) {
+    print('xd')
+    td$minute = td$minute - 60
+    td$hour = td$hour + 1
   }
+  td <- data.matrix(td)
+  prediction <- model %>% predict(td)
+}

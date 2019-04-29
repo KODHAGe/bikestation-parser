@@ -1,5 +1,6 @@
 .RData
 .Rhistory
+.Renviron
 export/
 stations/
 .Rproj.user/
@@ -7,3 +8,4 @@ stations/
 .DS_Store
 .httr-oauth
 .httr-oauth-SUSPENDED
+credentials.json

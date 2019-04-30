@@ -74,7 +74,7 @@ parseData <- function () {
         datapoint.bikesAvailable <- n['bikesAvailable'][[1]]['value']
         datapoint.stationSize <- strtoi(n['bikesAvailable'][[1]]['value']) + strtoi(n['spacesAvailable'][[1]]['value'])
         datapoint.name <- n['name'][[1]]['value']
-        datapoint.id <- n['stationId'][[1]]['value']
+        datapoint.id <- n['stationId'][[1]insta]['value']
         
         # Create a list of values, make sure this fits the dataframe
         datapoint <- list(unlist(datapoint.name), unlist(datapoint.id), datapoint.date[2], datapoint.month[2], datapoint.weekday[2], datapoint.hour[2], datapoint.minute[2], unlist(datapoint.bikesAvailable), unlist(datapoint.stationSize))

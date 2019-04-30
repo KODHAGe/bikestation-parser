@@ -12,6 +12,8 @@ library(googleCloudStorageR)
 Sys.getenv("GCS_AUTH_FILE")
 gcs_global_bucket(Sys.getenv("GCS_GLOBAL_BUCKET"))
 
+install_keras()
+
 #* Run learning
 #* @get /run
 run <- function () {
@@ -114,22 +116,39 @@ run <- function () {
   print(test_predictions)
   
   gcs_upload("checkpoints/model.hdf5")
-  list(status = "SUCCESS", code = "200",output = list(run = TRUE))
+  list(status = "SUCCESS", code = "200", output = list(run = TRUE))
 }
 
 #* Run prediction
-#* @get /predict
-predict <- function() {
+#* @get /prediction
+prediction <- function() {
+  load_time <- Sys.time()
+  
+  hour = hour(load_time)
+  minute = minute(load_time)
+  weekday = wday(load_time, week_start = 1)
+  month = month(load_time)
+  
   td <- as.data.frame(test_data)
   
   # Itämerentori station
   td$stationId_030 = 1
-  td$minute = td$minute + 30
+  td$minute = minute + 30
+  td$hour = hour
+  td$weekday = weekday
+  td$month = month
+  
   if(td$minute > 60) {
-    print('xd')
     td$minute = td$minute - 60
     td$hour = td$hour + 1
   }
   td <- data.matrix(td)
   prediction <- model %>% predict(td)
+  list(status = "SUCCESS", code = "200", output = list(station='Itämerentori', bikes_in_30_min = prediction))
+}
+
+#* Home
+#* @get /
+root <- function() {
+  list(status = "SUCCESS", code = "200", output = list(try='/prediction'))
 }
